@@ -1,14 +1,29 @@
-use std::io::{Read, stdin};
-use std::process::exit;
+use hugr::extension::{ExtensionRegistry, PRELUDE};
+use hugr::std_extensions::arithmetic::{float_ops, float_types, int_ops, int_types};
+use hugr::std_extensions::{collections, logic};
+use hugr::{hugr::ValidationError, Hugr};
 use serde_json;
-use hugr::{hugr::ValidationError, Hugr, extension::PRELUDE_REGISTRY};
+use std::io::{stdin, Read};
+use std::process::exit;
 
-fn parse_and_validate () -> Result<(), ValidationError> {
+fn parse_and_validate() -> Result<(), ValidationError> {
     let mut buffer = String::new();
     let mut stdin = stdin();
     stdin.read_to_string(&mut buffer).unwrap();
     let hugr: Hugr = serde_json::from_str(&buffer).unwrap();
-    hugr.validate(&PRELUDE_REGISTRY)?;
+
+    let registry = ExtensionRegistry::try_new([
+        PRELUDE.to_owned(),
+        logic::EXTENSION.to_owned(),
+        int_types::extension(),
+        int_ops::EXTENSION.to_owned(),
+        float_types::EXTENSION.to_owned(),
+        float_ops::EXTENSION.to_owned(),
+        collections::EXTENSION.to_owned(),
+    ])
+    .unwrap();
+
+    hugr.validate(&registry)?;
     println!("hugr parsed & validated successfully!");
     Ok(())
 }
@@ -19,6 +34,6 @@ fn main() {
         Err(err) => {
             println!("{}", err);
             exit(1);
-        },
+        }
     }
 }
